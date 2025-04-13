@@ -10,44 +10,97 @@ struct ReflectionInputView: View {
     
     var body: some View {
         NavigationView { // Use NavigationView for title and buttons
-            VStack(spacing: 20) {
-                Text("How was your day?")
-                    .font(.largeTitle)
-                    .padding(.top)
+            ZStack {
+                // Black background to match app theme
+                Color.black.edgesIgnoringSafeArea(.all)
                 
-                Picker("Day Type", selection: $selectedType) {
-                    ForEach(ReflectionType.allCases, id: \.self) { type in
-                        Text(type.rawValue).tag(type)
+                VStack(spacing: 16) {
+                    Text("Did you get anything done today?")
+                        .font(.largeTitle)
+                        .foregroundColor(.white)
+                        .padding(.top)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                    
+                    // Custom segmented control with Yes/No labels
+                    HStack(spacing: 8) {
+                        Button(action: { selectedType = .meaningful }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(selectedType == .meaningful ? Color.green : Color.green.opacity(0.3))
+                                    .frame(height: 40)
+                                
+                                Text("Yes")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .fontWeight(selectedType == .meaningful ? .bold : .regular)
+                            }
+                        }
+                        
+                        Button(action: { selectedType = .wasted }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(selectedType == .wasted ? Color.red : Color.red.opacity(0.3))
+                                    .frame(height: 40)
+                                
+                                Text("No")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .fontWeight(selectedType == .wasted ? .bold : .regular)
+                            }
+                        }
                     }
+                    .padding(.horizontal)
+                    
+                    // Beige text editor that fills most of the screen
+                    TextEditor(text: $explanation)
+                        .background(Color(red: 0.95, green: 0.9, blue: 0.8)) // Beige color
+                        .foregroundColor(.black) // Ensure text is black for visibility on beige
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                        .padding(.bottom, 80) // Add padding to account for button
+                        .colorScheme(.light) // Force light mode for this component to avoid dark mode issues
+                    
+                    Spacer(minLength: 0)
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 
-                TextEditor(text: $explanation)
-                    .frame(height: 150)
-                    .border(Color.gray.opacity(0.5), width: 1)
-                    .cornerRadius(5)
-                    .padding(.horizontal)
-                
-                Button("Save Reflection") {
-                    saveReflection()
-                    dismiss()
+                // Place button at bottom
+                VStack {
+                    Spacer()
+                    Button("Save Reflection") {
+                        saveReflection()
+                        dismiss()
+                    }
+                    .foregroundColor(.white)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 30)
+                    .background(Color.red)
+                    .cornerRadius(10)
+                    .padding(.bottom, 30)
                 }
-                .buttonStyle(.borderedProminent)
-                .padding(.bottom)
-                
-                Spacer()
             }
             .navigationTitle("Daily Reflection")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.red)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveReflection()
+                        dismiss()
+                    }
+                    .foregroundColor(.red)
                 }
             }
         }
+        .accentColor(.red) // Makes the navigation bar elements red
     }
     
     private func saveReflection() {
