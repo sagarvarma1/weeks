@@ -37,41 +37,54 @@ struct weeksApp: App {
     // Notification Delegate
     @StateObject private var notificationDelegate = NotificationDelegate()
 
+    // Set delegate early
+    init() {
+        UNUserNotificationCenter.current().delegate = notificationDelegate
+    }
+
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                mainContentView()
-                    .onReceive(notificationDelegate.$shouldNavigateToReflectionInput) { shouldNavigate in
-                         if shouldNavigate {
-                             navigateToReflectionInput = true
-                             // Reset the trigger after handling
-                             notificationDelegate.resetNavigationTrigger()
-                         }
-                     }
-                    .sheet(isPresented: $navigateToReflectionInput) { // Use sheet for reflection input
-                        ReflectionInputView()
+                // Always show LifeInWeeks as main view, and use sheets for inputs
+                Group {
+                    if birthdayString.isEmpty {
+                        // First-time launch placeholder that triggers the sheet
+                        Color.black
+                            .edgesIgnoringSafeArea(.all)
+                            .onAppear {
+                                // Show birthday input sheet immediately if no birthday set
+                                showBirthdayInput = true
+                            }
+                    } else {
+                        // Main app view once birthday is set
+                        LifeInWeeksView(showBirthdayInput: $showBirthdayInput,
+                                        requestNotificationPermission: requestNotificationPermission,
+                                        scheduleWeeklyNotification: scheduleWeeklyNotification,
+                                        scheduleDailyReflectionNotification: scheduleDailyReflectionNotification)
+                            .navigationBarBackButtonHidden(true)
                     }
+                }
+                .onReceive(notificationDelegate.$shouldNavigateToReflectionInput) { shouldNavigate in
+                    // Check if we need to navigate and the view isn't already presented
+                    if shouldNavigate && !navigateToReflectionInput {
+                        // Introduce a small delay to allow UI to settle
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            navigateToReflectionInput = true
+                            // Reset the trigger *after* setting the state
+                            notificationDelegate.resetNavigationTrigger()
+                        }
+                    }
+                }
+                // Sheet for birthday input - presented modally
+                .fullScreenCover(isPresented: $showBirthdayInput, content: {
+                    BirthdayInputView(showBirthdayInput: $showBirthdayInput)
+                })
+                // Sheet for reflection input
+                .sheet(isPresented: $navigateToReflectionInput) {
+                    ReflectionInputView()
+                }
             }
             .modelContainer(sharedModelContainer)
-            .onAppear {
-                // Set the notification delegate
-                UNUserNotificationCenter.current().delegate = notificationDelegate
-            }
-        }
-    }
-    
-    // Main Content View Logic
-    @ViewBuilder
-    private func mainContentView() -> some View {
-        if birthdayString.isEmpty || showBirthdayInput {
-            BirthdayInputView(showBirthdayInput: $showBirthdayInput)
-                .navigationBarBackButtonHidden(true)
-        } else {
-            LifeInWeeksView(showBirthdayInput: $showBirthdayInput,
-                            requestNotificationPermission: requestNotificationPermission,
-                            scheduleWeeklyNotification: scheduleWeeklyNotification,
-                            scheduleDailyReflectionNotification: scheduleDailyReflectionNotification)
-                .navigationBarBackButtonHidden(true)
         }
     }
     

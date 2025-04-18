@@ -26,10 +26,15 @@ struct BirthdayInputView: View {
                 .labelsHidden()
             
             Button(action: {
+                // Save the date first
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
                 birthdayString = formatter.string(from: selectedDate)
-                showBirthdayInput = false
+                
+                // Animate the state change to help trigger the view switch
+                withAnimation {
+                    showBirthdayInput = false
+                }
             }) {
                 Text("Continue")
                     .font(.headline)
